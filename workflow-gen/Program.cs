@@ -22,9 +22,11 @@ namespace WorkflowGen
     /// </summary>
     public class Program
     {
-        private static readonly Gauge PublishCallTime = Metrics.CreateGauge("lh_feed_generator_publish_call_time", "The time it takes for the publish call to return");
+        private static readonly Gauge PublishCallTime = Metrics.CreateGauge("lh_workflow_generator_publish_call_time", "The time it takes for the workflow call to return");
 
-        private static readonly Counter PublishFailureCount = Metrics.CreateCounter("lh_feed_generator_publish_failure_count", "Publich calls that throw");
+        private static readonly Counter PublishFailureCount = Metrics.CreateCounter("lh_workflow_generator_publish_failure_count", "Publich calls that throw");
+
+        const string DaprWorkflowComponent = "dapr";
 
 
         /// <summary>
@@ -65,11 +67,11 @@ namespace WorkflowGen
             DaprClientBuilder daprClientBuilder = new DaprClientBuilder();
 
             DaprClient client = daprClientBuilder.Build();
-
+            var Counter = 0;
             while (true)
             {
                 Random random = new Random();
-                var num = random.Next(20);
+                var num = random.Next(30);
                 OrderPayload orderInfo = new OrderPayload("Cars", num * 1000, num);
                 string orderId = Guid.NewGuid().ToString()[..8];
 
@@ -105,6 +107,11 @@ namespace WorkflowGen
                     PublishFailureCount.Inc();
                 }
 
+                Counter++;
+                if (Counter > 5){
+                    await client.SaveStateAsync<OrderPayload>("statestore", "cars",  new OrderPayload(Name: "cars", TotalCost: 15000, Quantity: 100));
+                    Counter = 0;
+                }
                 await Task.Delay(delay);
             }
         }

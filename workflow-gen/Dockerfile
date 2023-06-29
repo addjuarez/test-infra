@@ -11,8 +11,8 @@ FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build-env
 WORKDIR /app
 
 COPY . ./
-RUN dotnet restore feed-generator/*.csproj 
-RUN dotnet publish feed-generator/*.csproj -c Release -o /out
+RUN dotnet restore workflow-gen/*.csproj 
+RUN dotnet publish workflow-gen/*.csproj -c Release -o /out
 
 FROM base AS final
 WORKDIR /app
