@@ -34,15 +34,6 @@ namespace WorkflowGen
         public static void Main(string[] args)
         {
             int delayInMilliseconds = 10000;
-            if (args.Length != 0 && args[0] != "%LAUNCHER_ARGS%")
-            {
-                if (int.TryParse(args[0], out delayInMilliseconds) == false)
-                {
-                    string msg = "Could not parse delay";
-                    Console.WriteLine(msg);
-                    throw new InvalidOperationException(msg);
-                }
-            }
 
             var server = new MetricServer(port: 9988);
             server.Start();
@@ -68,9 +59,6 @@ namespace WorkflowGen
 
         static internal async void StartMessageGeneratorAsync(int delayInMilliseconds)
         {
-            // the name of the component and the topic happen to be the same here...
-            const string DaprWorkflowComponent = "dapr";
-
 
             TimeSpan delay = TimeSpan.FromMilliseconds(delayInMilliseconds);
 
@@ -103,7 +91,6 @@ namespace WorkflowGen
 
                             Console.WriteLine("Your workflow has started. Here is the status of the workflow: {0}", state.RuntimeStatus);
 
-                            // Wait for the workflow to complete
                             state = await client.WaitForWorkflowCompletionAsync(
                                 instanceId: orderId,
                                 workflowComponent: DaprWorkflowComponent);

@@ -30,13 +30,10 @@
             OrderPayload orderResponse;
             string key;
 
-            // Ensure that the store has items
             (orderResponse, key) = await client.GetStateAndETagAsync<OrderPayload>(storeName, req.ItemName);
 
-            // Catch for the case where the statestore isn't setup
             if (orderResponse == null)
             {
-                // Not enough items.
                 return new InventoryResult(false, orderResponse);
             }
 
@@ -45,16 +42,13 @@
                 orderResponse.Quantity,
                 orderResponse.Name);
 
-            // See if there're enough items to purchase
             if (orderResponse.Quantity >= req.Quantity)
             {
-                // Simulate slow processing
                 await Task.Delay(TimeSpan.FromSeconds(2));
 
                 return new InventoryResult(true, orderResponse);
             }
 
-            // Not enough items.
             return new InventoryResult(false, orderResponse);
 
         }

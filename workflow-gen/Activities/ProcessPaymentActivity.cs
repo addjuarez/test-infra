@@ -27,7 +27,6 @@
                 req.ItemBeingPruchased,
                 req.Currency);
 
-            // Simulate slow processing
             await Task.Delay(TimeSpan.FromSeconds(7));
 
             this.logger.LogInformation(
