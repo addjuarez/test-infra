@@ -1,10 +1,10 @@
-﻿namespace WorkflowConsoleApp.Workflows
+﻿namespace WorkflowGen.Workflows
 {
     using System.Threading.Tasks;
     using Dapr.Workflow;
     using DurableTask.Core.Exceptions;
-    using WorkflowConsoleApp.Activities;
-    using WorkflowConsoleApp.Models;
+    using WorkflowGen.Activities;
+    using WorkflowGen.Models;
 
     class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
     {

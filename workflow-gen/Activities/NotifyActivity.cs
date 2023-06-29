@@ -1,4 +1,4 @@
-﻿namespace WorkflowConsoleApp.Activities
+﻿namespace WorkflowGen.Activities
 {
     using System.Threading.Tasks;
     using Dapr.Workflow;

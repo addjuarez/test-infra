@@ -3,7 +3,7 @@
 // Licensed under the MIT License.
 // ------------------------------------------------------------
 
-namespace FeedGenerator
+namespace WorkflowGen
 {
     using Dapr.Client;
     using Dapr.Tests.Common.Models;
@@ -12,7 +12,10 @@ namespace FeedGenerator
     using Prometheus;
     using System;
     using System.Threading.Tasks;
-
+    using Microsoft.Extensions.DependencyInjection;
+    using WorkflowGen.Activities;
+    using WorkflowGen.Models;
+    using WorkflowGen.Workflows;
     /// <summary>
     /// FeedGenerator - generates messages and publishes them using Dapr.
     /// The main functionality is in StartMessageGeneratorAsync().
@@ -66,24 +69,47 @@ namespace FeedGenerator
         static internal async void StartMessageGeneratorAsync(int delayInMilliseconds)
         {
             // the name of the component and the topic happen to be the same here...
-            const string PubsubComponentName = "receivemediapost";
-            const string PubsubTopicName = "receivemediapost";
+            const string DaprWorkflowComponent = "dapr";
+
 
             TimeSpan delay = TimeSpan.FromMilliseconds(delayInMilliseconds);
 
             DaprClientBuilder daprClientBuilder = new DaprClientBuilder();
 
             DaprClient client = daprClientBuilder.Build();
+
             while (true)
             {
-                SocialMediaMessage message = GeneratePost();
+                Random random = new Random();
+                var num = random.Next(20);
+                OrderPayload orderInfo = new OrderPayload("Cars", num * 1000, num);
+                string orderId = Guid.NewGuid().ToString()[..8];
 
                 try
                 {
                     Console.WriteLine("Publishing");
                     using (PublishCallTime.NewTimer())
                     {
-                        await client.PublishEventAsync<SocialMediaMessage>(PubsubComponentName, PubsubTopicName, message);
+
+                        await client.StartWorkflowAsync(
+                            workflowComponent: DaprWorkflowComponent,
+                            workflowName: nameof(OrderProcessingWorkflow),
+                            input: orderInfo,
+                            instanceId: orderId);
+
+                            GetWorkflowResponse state = await client.WaitForWorkflowStartAsync(
+                                instanceId: orderId,
+                                workflowComponent: DaprWorkflowComponent);
+
+                            Console.WriteLine("Your workflow has started. Here is the status of the workflow: {0}", state.RuntimeStatus);
+
+                            // Wait for the workflow to complete
+                            state = await client.WaitForWorkflowCompletionAsync(
+                                instanceId: orderId,
+                                workflowComponent: DaprWorkflowComponent);
+
+                            Console.WriteLine("Workflow Status: {0}", state.RuntimeStatus);
+
                     }
                 }
                 catch (Exception e)
@@ -95,47 +121,5 @@ namespace FeedGenerator
                 await Task.Delay(delay);
             }
         }
-
-        static internal SocialMediaMessage GeneratePost()
-        {
-            Guid correlationId = Guid.NewGuid();
-            Guid messageId = Guid.NewGuid();
-            string message = GenerateRandomMessage();
-            DateTime creationDate = DateTime.UtcNow;
-
-            return new SocialMediaMessage()
-            {
-                CorrelationId = correlationId,
-                MessageId = messageId,
-                Message = message,
-                CreationDate = creationDate,
-                PreviousAppTimestamp = DateTime.UtcNow
-            };
-        }
-
-        static internal string GenerateRandomMessage()
-        {
-            Random random = new Random();
-            int length = random.Next(5, 10);
-
-            string s = "";
-            for (int i = 0; i < length; i++)
-            {
-                int j = random.Next(26);
-                char c = (char)('a' + j);
-                s += c;
-            }
-
-            // add hashtag
-            s += " #";
-            s += Constants.HashTags[random.Next(Constants.HashTags.Length)];
-            return s;
-        }
-
-static internal async void RestockInventory(string itemToPurchase)
-{
-    await daprClient.SaveStateAsync<OrderPayload>(StoreName, itemToPurchase,  new OrderPayload(Name: itemToPurchase, TotalCost: 15000, Quantity: 100));
-}
-
     }
 }

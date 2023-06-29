@@ -1,4 +1,4 @@
-namespace WorkflowConsoleApp.Models 
+namespace WorkflowGen.Models 
 {
     record OrderPayload(string Name, double TotalCost, int Quantity = 1);
     record InventoryRequest(string RequestId, string ItemName, int Quantity);

@@ -1,9 +1,9 @@
-﻿namespace WorkflowConsoleApp.Activities
+﻿namespace WorkflowGen.Activities
 {
     using System.Threading.Tasks;
     using Dapr.Client;
     using Dapr.Workflow;
-    using WorkflowConsoleApp.Models;
+    using WorkflowGen.Models;
     using Microsoft.Extensions.Logging;
     using System;
 
