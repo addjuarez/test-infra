@@ -6,6 +6,7 @@
 namespace WorkflowGen
 {
     using Dapr.Client;
+    using Dapr.Workflow;
     using Dapr.Tests.Common.Models;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Hosting;
@@ -40,24 +41,29 @@ namespace WorkflowGen
             var server = new MetricServer(port: 9988);
             server.Start();
 
-            IHost host = CreateHostBuilder(args).Build();
+            var builder = Host.CreateDefaultBuilder(args).ConfigureServices(services =>
+            {
+                services.AddDaprWorkflow(options =>
+                {
+                    // Note that it's also possible to register a lambda function as the workflow
+                    // or activity implementation instead of a class.
+                    options.RegisterWorkflow<OrderProcessingWorkflow>();
+
+                    // These are the activities that get invoked by the workflow(s).
+                    options.RegisterActivity<NotifyActivity>();
+                    options.RegisterActivity<ReserveInventoryActivity>();
+                    options.RegisterActivity<ProcessPaymentActivity>();
+                    options.RegisterActivity<UpdateInventoryActivity>();
+                });
+            });
 
             Task.Run(() => StartMessageGeneratorAsync(delayInMilliseconds));
 
+            using var host = builder.Build();
             host.Run();
-        }
 
-        /// <summary>
-        /// Creates WebHost Builder.
-        /// </summary>
-        /// <param name="args">Arguments.</param>
-        /// <returns>Returns IHostbuilder.</returns>
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+
+        }
 
         static internal async void StartMessageGeneratorAsync(int delayInMilliseconds)
         {
@@ -68,6 +74,8 @@ namespace WorkflowGen
 
             DaprClient client = daprClientBuilder.Build();
             var Counter = 0;
+            await client.SaveStateAsync<OrderPayload>("statestore", "Cars",  new OrderPayload(Name: "cars", TotalCost: 15000, Quantity: 100));
+
             while (true)
             {
                 Random random = new Random();
@@ -109,7 +117,7 @@ namespace WorkflowGen
 
                 Counter++;
                 if (Counter > 5){
-                    await client.SaveStateAsync<OrderPayload>("statestore", "cars",  new OrderPayload(Name: "cars", TotalCost: 15000, Quantity: 100));
+                    await client.SaveStateAsync<OrderPayload>("statestore", "Cars",  new OrderPayload(Name: "Cars", TotalCost: 15000, Quantity: 100));
                     Counter = 0;
                 }
                 await Task.Delay(delay);
